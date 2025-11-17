@@ -1,14 +1,14 @@
-using Mapping_Tools.Domain.ComboColourStudio;
+using Mapping_Tools.Domain.ColourHaxStudio;
 using System.Text.Json;
 
 namespace Mapping_Tools.Infrastructure.ComboColourStudio
 {
-    public class ComboColourProjectRepository : IComboColourProjectRepository
+    public class ComboColourProjectRepository : IColourHaxProjectRepository
     {
-        public ComboColourStudioProject Load(string path)
+        public ColourHaxProject Load(string path)
         {
             var json = File.ReadAllText(path);
-            var project = JsonSerializer.Deserialize<ComboColourStudioProject>(json);
+            var project = JsonSerializer.Deserialize<ColourHaxProject>(json);
             if (project is null)
             {
                 throw new InvalidOperationException("Failed to deserialize ComboColourStudioProject from file.");
@@ -16,7 +16,7 @@ namespace Mapping_Tools.Infrastructure.ComboColourStudio
             return project;
         }
 
-        public void Save(ComboColourStudioProject project, string path)
+        public void Save(ColourHaxProject project, string path)
         {
             var json = JsonSerializer.Serialize(project, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(path, json);

@@ -8,7 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Compile Remove="ComboColourStudio\ComboColour.cs" />
+      <Compile Remove="ColourHaxStudio\ComboColour.cs" />
     </ItemGroup>
 
 </Project>

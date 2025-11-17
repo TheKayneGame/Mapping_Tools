@@ -1,5 +1,5 @@
 
-using Mapping_Tools.Domain.ComboColourStudio;
+using Mapping_Tools.Domain.ColourHaxStudio;
 using Mapping_Tools.Application;
 using Mapping_Tools.Domain.Beatmaps;
 
@@ -51,19 +51,35 @@ namespace Mapping_Tools.Application.Tests
             Assert.That(result, Is.True);
         }
 
+        [Test]
+        public void FullFlow_Test()
+        {
+            // add colour to palette
+            service.AddColourToPalette(new ComboColour(100, 150, 200));
+            Assert.That(service.CurrentProject.ColourPalette.Size, Is.EqualTo(1));
+            // add colour point
+            service.AddColourPoint(3.45, new SortedSet<int> { 0 });
+            Assert.That(service.CurrentProject.ComboColourPoints.Count, Is.EqualTo(1));
+            // update colour point
+            var newPoint = new ComboColourPoint(3.45, new SortedSet<int> { 0 }, ColourPointMode.Normal);
+            var updateResult = service.UpdateColourPoint(0, newPoint);
+            Assert.That(updateResult, Is.True);
+            // 
+        }
+
 
 
         // Fake repository for testing
-        private class FakeComboColourProjectRepository : IComboColourProjectRepository
+        private class FakeComboColourProjectRepository : IColourHaxProjectRepository
         {
-            private ComboColourStudioProject project = new ComboColourStudioProject();
+            private ColourHaxProject project = new ColourHaxProject();
 
-            public ComboColourStudioProject Load(string path)
+            public ColourHaxProject Load(string path)
             {
                 return project;
             }
 
-            public void Save(ComboColourStudioProject project, string path)
+            public void Save(ColourHaxProject project, string path)
             {
                 // No-op for test
             }

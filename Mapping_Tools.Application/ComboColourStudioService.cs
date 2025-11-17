@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Mapping_Tools.Domain.Beatmaps;
-using Mapping_Tools.Domain.ComboColourStudio;
+using Mapping_Tools.Domain.ColourHaxStudio;
 
 namespace Mapping_Tools.Application
 {
     public class ComboColourStudioService
     {
-        private readonly IComboColourProjectRepository _projectRepository;
+        private readonly IColourHaxProjectRepository _projectRepository;
 
-        public ComboColourStudioProject? CurrentProject { get; private set; }
+        public ColourHaxProject? CurrentProject { get; private set; }
 
-        public ComboColourStudioService(IComboColourProjectRepository projectRepository)
+        public ComboColourStudioService(IColourHaxProjectRepository projectRepository)
         {
             _projectRepository = projectRepository;
         }
@@ -48,14 +48,14 @@ namespace Mapping_Tools.Application
             CurrentProject.RemoveColourPoint(index);
         }
 
-        public ComboColourPoint? GetColourPoint(int index)
+        public ColourHaxPoint? GetColourPoint(int index)
         {
             if (CurrentProject == null)
                 throw new InvalidOperationException("No project is currently loaded.");
             return CurrentProject.GetColourPoint(index);
         }
 
-        public bool UpdateColourPoint(int index, ComboColourPoint newPoint)
+        public bool UpdateColourPoint(int index, ColourHaxPoint newPoint)
         {
             if (CurrentProject == null)
                 throw new InvalidOperationException("No project is currently loaded.");

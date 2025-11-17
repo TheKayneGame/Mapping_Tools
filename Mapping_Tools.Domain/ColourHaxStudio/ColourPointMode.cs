@@ -1,4 +1,4 @@
-namespace Mapping_Tools.Domain.ComboColourStudio
+namespace Mapping_Tools.Domain.ColourHaxStudio
 {
     public enum ColourPointMode
     {
