@@ -1,73 +1,154 @@
-# Data Schema — Core Domain Tables
+# Data Schema — Core ERD
 
-The diagram models core domain tables inferred from the memory bank and code structure: Beatmap, HitObject, TimingPoint, Sample, Project and Backup.
+Purpose: Provide a concise, implementation-focused ER view of core domain persistence. The diagrams show primary tables for the core domain and how they relate across bounded contexts.
+
+## Core ER Diagram
 
 ```mermaid
 erDiagram
-  BEATMAP {
-    int beatmap_id PK
-    string file_path
-    string title
-    string artist
-    int project_id FK
-    int version_token
-    datetime last_modified
-  }
-  HITOBJECT {
-    int hitobject_id PK
-    int beatmap_id FK
-    int time
-    string type
-    string path_data "slider anchor/curve data"
-    int combo
-  }
-  TIMINGPOINT {
-    int timingpoint_id PK
-    int beatmap_id FK
-    int time
-    float bpm
-    bool is_redline
-    float sv_multiplier
-  }
-  SAMPLE {
-    int sample_id PK
-    int beatmap_id FK
-    string file_name
-    string hash
-    int layer_index
-    float volume
-  }
-  PROJECT {
-    int project_id PK
-    string name
-    string file_path
-    datetime last_saved
-  }
-  BACKUP {
-    int backup_id PK
-    int beatmap_id FK
-    string file_path
-    datetime created_at
-    string reason
-  }
-
-  BEATMAP ||--o{ HITOBJECT : contains
-  BEATMAP ||--o{ TIMINGPOINT : defines
-  BEATMAP ||--o{ SAMPLE : references
-  PROJECT ||--o{ BEATMAP : contains
-  BEATMAP ||--o{ BACKUP : has
-
+    BEATMAP {
+      int beatmap_id PK
+      string artist
+      string title
+      string version
+    }
+    HITOBJECT {
+      int hitobject_id PK
+      int beatmap_id FK
+      int time
+      string type
+    }
+    TIMINGPOINT {
+      int timingpoint_id PK
+      int beatmap_id FK
+      float bpm
+      bool redline
+    }
+    SAMPLE {
+      int sample_id PK
+      int beatmap_id FK
+      string filename
+      int index
+    }
+    PROJECT {
+      int project_id PK
+      string name
+    }
+    BACKUP {
+      int backup_id PK
+      int beatmap_id FK
+      datetime created_at
+      string path
+    }
+    BEATMAP ||--o{ HITOBJECT : "has"
+    BEATMAP ||--o{ TIMINGPOINT : "has"
+    BEATMAP ||--o{ SAMPLE : "contains"
+    BEATMAP ||--o{ BACKUP : "backed_by"
+    PROJECT ||--o{ BEATMAP : "contains"
 ```
 
+## Grouped ERD (by Bounded Contexts)
+
+Beatmap Core context
+
+```mermaid
+erDiagram
+    BEATMAP {
+      int beatmap_id PK
+      string title
+    }
+    HITOBJECT {
+      int hitobject_id PK
+      int beatmap_id FK
+    }
+    TIMINGPOINT {
+      int timingpoint_id PK
+      int beatmap_id FK
+    }
+    BEATMAP ||--o{ HITOBJECT : "has"
+    BEATMAP ||--o{ TIMINGPOINT : "has"
+```
+
+Hitsound Studio context
+
+```mermaid
+erDiagram
+    SAMPLE {
+      int sample_id PK
+      int beatmap_id FK
+      string filename
+    }
+    SAMPLE }o--|| BEATMAP : "belongs_to"
+```
+
+Tools / Project & Backup context
+
+```mermaid
+erDiagram
+    PROJECT {
+      int project_id PK
+      string name
+    }
+    BACKUP {
+      int backup_id PK
+      int beatmap_id FK
+      datetime created_at
+    }
+    PROJECT ||--o{ BEATMAP : "contains"
+    BEATMAP ||--o{ BACKUP : "backed_by"
+```
+
+## Combined Cross-Context ERD
+
+```mermaid
+erDiagram
+    BEATMAP {
+      int beatmap_id PK
+    }
+    HITOBJECT {
+      int hitobject_id PK
+      int beatmap_id FK
+    }
+    TIMINGPOINT {
+      int timingpoint_id PK
+      int beatmap_id FK
+    }
+    SAMPLE {
+      int sample_id PK
+      int beatmap_id FK
+    }
+    PROJECT {
+      int project_id PK
+    }
+    BACKUP {
+      int backup_id PK
+      int beatmap_id FK
+    }
+    BEATMAP ||--o{ HITOBJECT : "has"
+    BEATMAP ||--o{ TIMINGPOINT : "has"
+    BEATMAP ||--o{ SAMPLE : "contains"
+    PROJECT ||--o{ BEATMAP : "contains"
+    BEATMAP ||--o{ BACKUP : "backed_by"
+```
+
+## Legend
+
+- PK: Primary key. FK: Foreign key.
+- Relationship labels:
+  - has — aggregation (one-to-many within aggregate)
+  - contains — composition or ownership
+  - backed_by — backup / supplier relation
+  - belongs_to — cross-context reference
+
 ## Assumptions
-- Attribute names use snake_case identifiers to make PK/FK roles explicit; this is an inferred mapping to a relational schema.
-- Version comparison uses a numeric version_token on Beatmap (inferred from GetNewestVersionOrNot) to drive merge decisions.
-- Backup is modelled as a first-class entity (backup_id, created_at) referenced by BackupManager.
 
-## Mapping notes
-- Beatmap (beatmap_id) is the aggregate root coordinating HitObject, TimingPoint, Sample and Backup entities.
-- HitObject and TimingPoint are strongly owned by Beatmap; their lifecycle follows Beatmap persistence operations.
-- Backup entries are created before destructive saves and retained until save completes or cleanup runs.
-- Project groups beatmaps and stores per-tool project state (ISavable), patterns and project-level configuration.
+- PROJECT and BACKUP inferred from Memory Bank and BackupManager usage (Mapping_Tools/Classes/SystemTools/BackupManager.cs) — represent persistent project grouping and backup records for rollback/restore.
+- SAMPLE inferred from Hitsound modules (Mapping_Tools/Classes/HitsoundStuff/) — represents persisted sample metadata referenced by Beatmap.
+- TIMINGPOINT and HITOBJECT map directly to classes in Mapping_Tools/Classes/BeatmapHelper/ and are modeled as persisted entities owned by the Beatmap aggregate.
+- Additional technical fields (artist, version, path) are illustrative and inferred from product.md and Beatmap.cs structure for clarity in ER diagrams.
 
-Related docs: [`1_Context_Map.md`](./docs/ddd/1_Context_Map.md:1) — [`2_Ubiquitous_Language.md`](./docs/ddd/2_Ubiquitous_Language.md:1)
+## Mapping Notes
+
+- Beatmap aggregate persists BEATMAP, HITOBJECT, TIMINGPOINT, and SAMPLE via BeatmapRepository; repository interfaces should align with these tables.
+- BackupManager is a domain service that writes BACKUP records before destructive operations; consider transaction/compensating action patterns for rollback.
+- PROJECT groups BEATMAPs for multi-difficulty mapset operations and can be the unit for exports and bulk operations.
